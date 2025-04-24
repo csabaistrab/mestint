@@ -1,3 +1,5 @@
+from wsgiref.validate import validator
+
 import numpy as np
 from sklearn.datasets import load_iris
 import pandas as pd
@@ -6,6 +8,7 @@ import tensorflow as tf
 
 
 from sklearn.utils import shuffle
+from tensorflow.core.protobuf.tpu.compilation_result_pb2 import xla_dot_tsl_dot_protobuf_dot_error__codes__pb2
 
 
 def one_hot_encode(x: np.ndarray, num_labels: int) -> np.ndarray:
@@ -61,12 +64,13 @@ def main():
     )
     x = tf.ones((3, X_train.shape[1]))
     model(x)
-    model.fit(X_train, y_train, epochs=50, batch_size=32)
+    history = model.fit(X_train, y_train, epochs=50, batch_size=32,validation_data=[X_test,y_test])
     print(model.evaluate(X_test, y_test))
+
     choice = np.random.choice(np.arange(X_test.shape[0] + 1))
     p = model.predict(np.array([X_test[choice]]))
     choice, np.argmax(p), np.argmax(y_test[choice])
     print("s")
-
+    print(history)
 if __name__ == '__main__':
     main()
