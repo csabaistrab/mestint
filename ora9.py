@@ -62,7 +62,7 @@ def main():
     x = tf.ones((3, X_train.shape[1]))
     model(x)
     model.fit(X_train, y_train, epochs=50, batch_size=32)
-    model.evaluate(X_test, y_test)
+    print(model.evaluate(X_test, y_test))
     choice = np.random.choice(np.arange(X_test.shape[0] + 1))
     p = model.predict(np.array([X_test[choice]]))
     choice, np.argmax(p), np.argmax(y_test[choice])
