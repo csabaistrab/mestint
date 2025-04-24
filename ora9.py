@@ -66,7 +66,7 @@ def main():
     choice = np.random.choice(np.arange(X_test.shape[0] + 1))
     p = model.predict(np.array([X_test[choice]]))
     choice, np.argmax(p), np.argmax(y_test[choice])
-
+    print("s")
 
 if __name__ == '__main__':
     main()
