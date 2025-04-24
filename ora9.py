@@ -45,6 +45,28 @@ def main():
     model.summary()
     for layer in model.get_weights():
         print(layer.shape)
+    tf.keras.utils.plot_model(
+        model,
+        show_shapes=True,
+        show_dtype=True,
+        show_layer_names=True,
+        expand_nested=True,
+        dpi=96,
+        layer_range=None,
+        show_layer_activations=True)
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+    x = tf.ones((3, X_train.shape[1]))
+    model(x)
+    model.fit(X_train, y_train, epochs=50, batch_size=32)
+    model.evaluate(X_test, y_test)
+    choice = np.random.choice(np.arange(X_test.shape[0] + 1))
+    p = model.predict(np.array([X_test[choice]]))
+    choice, np.argmax(p), np.argmax(y_test[choice])
+
 
 if __name__ == '__main__':
     main()
