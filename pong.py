@@ -2,13 +2,13 @@ import numpy as np
 import pygame
 from tqdm import tqdm
 
-import pong
+
 import matplotlib.pyplot as plt
 
 
 # Initialize q-table values to 0
 Q = np.zeros((5, 10))
-print(Q)
+Q
 
 # Globális Paraméterek
 # Agent
@@ -65,9 +65,8 @@ state_to_id = {}
 
 # Képernyő méret
 screen = 0
-clock = pong.pygame.time.Clock()
-
-rewards, epsilon_history = pong.play_episodes(
+clock = pygame.time.Clock()
+rewards, epsilon_history = play_episodes(
         # n_episodes=50_000,
         n_episodes=100,
         max_epsilon=1.0,
@@ -79,6 +78,7 @@ rewards, epsilon_history = pong.play_episodes(
         human=False,
         log=False
     )
+
 def init_pong():
     """Játék inicializálása"""
     global screen
@@ -234,7 +234,7 @@ def play_episodes(n_episodes=10_000, max_epsilon=1.0, min_epsilon=0.05, decay_ra
             # Most új állapotba kerültünk, mert megtettünk egy bizonyos intézkedést
 
 def main():
-    pong.agent
+    agent
 
     return
 
