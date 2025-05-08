@@ -1,197 +1,95 @@
-import numpy as np
+### pong.py
 import pygame
+import numpy as np
 from tqdm import tqdm
 
+BLACK = (0,0,0)
+WHITE = (255,255,255)
+RED = (255,0,0)
 
-import matplotlib.pyplot as plt
-
-
-# Initialize q-table values to 0
-Q = np.zeros((5, 10))
-Q
-
-# Globális Paraméterek
-# Agent
-agent = None
-
-# Színek
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-
-# Jelek a játék dekódolásához
 SIGN_EMPTY = " "
 SIGN_BALL = "o"
 SIGN_PLAYER = "x"
 
-# Az "ablak" nagyítás nélküli mérete
 SPACE_SIZE = (20, 20)
-
-# Ezt a felhasználói felület ablakának felnagyítására fogjuk használni
 ZOOM_SIZE = 10
 
-# 3 műveletünk van, amelyeket az ügynök bármikor megtehet:
 ACTION_IDLE = "IDLE"
 ACTION_LEFT = "LEFT"
 ACTION_RIGHT = "RIGHT"
-
 ACTIONS = [ACTION_IDLE, ACTION_LEFT, ACTION_RIGHT]
 
-# A lapát kezdő koordinátái
 rect_x = SPACE_SIZE[0] // 2
 rect_y = SPACE_SIZE[1] - 1
-
-# A lapát kezdeti sebessége
 rect_change_x = 0
 rect_change_y = 0
-
 rect_size_x = 5
 rect_size_to_sides_x = rect_size_x // 2
 rect_size_y = 1
 
-# A labda kezdeti helyzete
 ball_x = SPACE_SIZE[0] // 2
 ball_y = 1
-
-# A labda sebessége
 ball_change_x = 1
 ball_change_y = 1
 ball_size_to_sides = 1
 
-# A dictionary-t arra fogjuk használni,
 state_to_id = {}
-
-# Képernyő méret
+num_states = SPACE_SIZE[0] * SPACE_SIZE[1] * SPACE_SIZE[0] * SPACE_SIZE[1] * 2 * 2
 screen = 0
-clock = pygame.time.Clock()
-rewards, epsilon_history = play_episodes(
-        # n_episodes=50_000,
-        n_episodes=100,
-        max_epsilon=1.0,
-        min_epsilon=0.05,
-        decay_rate=0.0001,
-        gamma=0.95,
-        learn=True,
-        viz=False,
-        human=False,
-        log=False
-    )
-
-def init_pong():
-    """Játék inicializálása"""
-    global screen
-    global clock
-
-    pygame.init()
-
-    # A kijelző ablak inicializálása
-    size = (SPACE_SIZE[0] * ZOOM_SIZE, SPACE_SIZE[1] * ZOOM_SIZE)
-    screen = pygame.display.set_mode(size)
-    pygame.display.set_caption("pong")
-
-    clock = pygame.time.Clock()
-    print("Pong init")
+agent = None
 
 
 def drawrect(screen, x, y):
-    """Mozgatja a lapátot és korlátozza annak mozgását az ablak szélei között."""
     pygame.draw.rect(screen, RED, [(x - rect_size_to_sides_x) * ZOOM_SIZE, y * ZOOM_SIZE, ZOOM_SIZE * rect_size_x, ZOOM_SIZE])
 
-
 def encode_state(ball_x, ball_y, rect_x, rect_y, ball_change_x, ball_change_y):
-    """Kódolja az adott állapotot, hogy megkönnyítse az adott állapot felismerését"""
     return (ball_x, ball_y, rect_x, rect_y, ball_change_x, ball_change_y)
 
-
 def reset():
-    """Visszaállítjuk a globális változókat"""
-    global ball_change_x
-    global ball_change_y
-    global ball_size_to_sides
-    global ball_x
-    global ball_y
-    global rect_x
-    global rect_y
-    global rect_change_x
-    global rect_change_y
+    global ball_change_x, ball_change_y, ball_size_to_sides, ball_x, ball_y
+    global rect_x, rect_y, rect_change_x, rect_change_y
 
-    # A labda mozgásának visszaálítása
-    ball_change_x = 1
-    ball_change_y = 1
+    ball_change_x, ball_change_y = 1, 1
     ball_size_to_sides = 1
+    ball_x, ball_y = SPACE_SIZE[0] // 2, 1
+    rect_x, rect_y = SPACE_SIZE[0] // 2, SPACE_SIZE[1] - 1
+    rect_change_x = rect_change_y = 0
 
-    # A labda helyzetének visszaállítása
-    ball_x = SPACE_SIZE[0] // 2
-    ball_y = 1
+def init_pong():
+    global screen, clock
+    pygame.init()
+    size = (SPACE_SIZE[0] * ZOOM_SIZE, SPACE_SIZE[1] * ZOOM_SIZE)
+    screen = pygame.display.set_mode(size)
+    pygame.display.set_caption("pong")
+    clock = pygame.time.Clock()
 
-    # A lapát kezdő koordinátáinak visszaállítása
-    rect_x = SPACE_SIZE[0] // 2
-    rect_y = SPACE_SIZE[1] - 1
-
-    # A lapát kezdő sebességének visszaállítása
-    rect_change_x = 0
-    rect_change_y = 0
-
-
-def play_episodes(n_episodes=10_000, max_epsilon=1.0, min_epsilon=0.05, decay_rate=0.0001, gamma=0.99, learn=True,
-                  viz=False, human=False, log=False):
-    global ball_change_x
-    global ball_change_y
-    global ball_size_to_sides
-    global ball_x
-    global ball_y
-    global rect_x
-    global rect_y
-    global rect_change_x
-    global rect_change_y
-    global state_to_id
-    global clock
+def play_episodes(n_episodes=10000, max_epsilon=1.0, min_epsilon=0.05, decay_rate=0.0001, gamma=0.99, learn=True, viz=False, human=False, log=False):
+    global ball_change_x, ball_change_y, ball_size_to_sides
+    global ball_x, ball_y, rect_x, rect_y, rect_change_x, rect_change_y
+    global state_to_id, clock
 
     rewards = []
     epsilon_history = []
 
-    # Végignézzük az epizódokat
     for episode in tqdm(range(n_episodes)):
         done = False
-
-        # Epszilon csökkentése
-        epsilon = min_epsilon + (max_epsilon - min_epsilon) * \
-                  np.exp(-decay_rate * episode)
-
-        # Környezet visszaállítása
+        epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate * episode)
         total_reward = 0
         reset()
 
-        # Első állapot beállítása
         state = encode_state(ball_x, ball_y, rect_x, rect_y, ball_change_x, ball_change_y)
         if state not in state_to_id:
             state_to_id[state] = len(state_to_id)
 
         while not done:
             reward = 0
-
-            # Háttér színének beállítása
             screen.fill(BLACK)
 
             if not human:
-                # Az Agent-től akciót kérünk, és ennek megfelelően állítjuk be a játékos mozgását
                 action = agent.act(state=state_to_id[state], epsilon=epsilon)
                 action_name = ACTIONS[action]
-
-                if action_name == ACTION_LEFT:
-                    rect_change_x = -1
-                elif action_name == ACTION_RIGHT:
-                    rect_change_x = 1
-                elif action_name == ACTION_IDLE:
-                    rect_change_x = 0
-                else:
-                    print("Error, unknwon action", action)
-                    exit(-1)
+                rect_change_x = -1 if action_name == ACTION_LEFT else 1 if action_name == ACTION_RIGHT else 0
             else:
-                # Emberi inputot is tudunk kezelni
-                action = 0
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         done = True
@@ -201,42 +99,78 @@ def play_episodes(n_episodes=10_000, max_epsilon=1.0, min_epsilon=0.05, decay_ra
                         elif event.key == pygame.K_RIGHT:
                             rect_change_x = 1
                     elif event.type == pygame.KEYUP:
-                        if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                        if event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
                             rect_change_x = 0
-                        elif event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                            rect_change_y = 0
 
-            # Megváltoztatjuk a játékos és a labda helyzetét a végrehajtott akciónak megfelelően.
             rect_x += rect_change_x
-            rect_y += rect_change_y
 
-            # Labda mozgsásának kezelése
-            if ball_x < 0:
-                ball_x = 0
-                ball_change_x = ball_change_x * -1
-            elif ball_x > SPACE_SIZE[0]:
-                ball_x = SPACE_SIZE[0]
-                ball_change_x = ball_change_x * -1
-            elif ball_y < 0:
+            if ball_x < 0 or ball_x > SPACE_SIZE[0]:
+                ball_change_x *= -1
+                ball_x = max(0, min(SPACE_SIZE[0], ball_x))
+            if ball_y < 0:
+                ball_change_y *= -1
                 ball_y = 0
-                ball_change_y = ball_change_y * -1
-            # Amikor a labda és a játékos ütközik, növeljük a jutalmat és megváltoztatjuk a pályát
-            elif ball_x + ball_size_to_sides >= rect_x - rect_size_to_sides_x and ball_x - ball_size_to_sides <= rect_x + rect_size_to_sides_x and ball_y == \
-                    SPACE_SIZE[1] - 1:
-                ball_change_y = ball_change_y * -1
+            elif ball_y == SPACE_SIZE[1] - 1 and rect_x - rect_size_to_sides_x <= ball_x <= rect_x + rect_size_to_sides_x:
+                ball_change_y *= -1
                 reward = 1
-            # Akkor fejezzük be az epizódot, amikor a játékos nem találja el a labdát
             elif ball_y > SPACE_SIZE[1] - 1:
-                ball_change_y = ball_change_y * -1
-                done = True
                 reward = -1
+                done = True
 
-            # Most új állapotba kerültünk, mert megtettünk egy bizonyos intézkedést
+            new_state = encode_state(ball_x, ball_y, rect_x, rect_y, ball_change_x, ball_change_y)
+            if new_state not in state_to_id:
+                state_to_id[new_state] = len(state_to_id)
 
-def main():
-    agent
+            ball_x += ball_change_x
+            ball_y += ball_change_y
 
-    return
+            if rect_x - rect_size_to_sides_x < 0 or rect_x > SPACE_SIZE[0] - rect_size_to_sides_x - 1:
+                reward = -1
+                done = True
 
-if __name__ == '__main__':
-    main()
+            if viz:
+                pygame.draw.rect(screen, WHITE, [(ball_x - ball_size_to_sides) * ZOOM_SIZE, (ball_y - ball_size_to_sides) * ZOOM_SIZE, ZOOM_SIZE, ZOOM_SIZE])
+                drawrect(screen, rect_x, rect_y)
+                pygame.display.flip()
+                clock.tick(60)
+
+            if learn:
+                agent.learn(state_to_id[state], action, reward, state_to_id[new_state], gamma)
+
+            state = new_state
+            total_reward += reward
+
+        if log:
+            print("Total reward:", total_reward)
+        rewards.append(total_reward)
+        epsilon_history.append(epsilon)
+
+    return rewards, epsilon_history
+
+
+### main.py
+from qla import QLearningAgent
+import pong
+import matplotlib.pyplot as plt
+
+pong.init_pong()
+pong.agent = QLearningAgent(n_states=pong.num_states, n_actions=3, learning_rate=1.0)
+
+rewards, epsilon_history = pong.play_episodes(
+    n_episodes=100,
+    max_epsilon=1.0,
+    min_epsilon=0.05,
+    decay_rate=0.0001,
+    gamma=0.95,
+    learn=True,
+    viz=False,
+    human=False,
+    log=False
+)
+
+plt.plot(epsilon_history)
+plt.title("Epsilon decay")
+plt.xlabel("Episodes")
+plt.ylabel("Epsilon")
+plt.grid(True)
+plt.show()
