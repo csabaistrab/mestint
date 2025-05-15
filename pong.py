@@ -1,4 +1,5 @@
 ### pong.py
+
 import pygame
 import numpy as np
 from tqdm import tqdm
@@ -157,7 +158,7 @@ pong.init_pong()
 pong.agent = QLearningAgent(n_states=pong.num_states, n_actions=3, learning_rate=1.0)
 
 rewards, epsilon_history = pong.play_episodes(
-    n_episodes=100,
+    n_episodes=50000,
     max_epsilon=1.0,
     min_epsilon=0.05,
     decay_rate=0.0001,

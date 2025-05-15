@@ -1,0 +1,17 @@
+90 perc
+notepad lesz
+importok lesznek
+problema jellemzoi
+pl 3 korso problema
+baj cel kezdoallapot
+segedlet futtatasa
+melysegi segedlet
+peldanyostitas lehet
+keresesek pl melysegi tryallerror szelessegi heurisztikus ilyenek
+allapotter reprezentacio
+modelt fel kell epiteni
+vesztesegfuggveny
+futtatas hiba elemezes
+Megerositeses tanulas
+vizualizald a vegeredmenyt
+nem lesz kenyszerkielegiteses problemat meg base-t
