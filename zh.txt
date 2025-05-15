@@ -16,3 +16,4 @@ Megerositeses tanulas
 vizualizald a vegeredmenyt
 nem lesz kenyszerkielegiteses problemat meg base-t
 act vagy learn-t belehet magolni
+action wizard metodus
