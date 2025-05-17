@@ -1,0 +1,54 @@
+✅ Q-learning segédlet (ZH-hoz)
+(Import engedélyezett, fájl .txt formátumban is használható)
+
+📌 Főbb fogalmak:
+- Q-learning: értékalapú megerősítéses tanulás, ahol egy Q[s,a] táblát tanulunk.
+- Állapot (state): a környezet adott helyzete.
+- Akció (action): amit az ügynök tehet az adott állapotban.
+- Jutalom (reward): az akció után kapott érték (pl. +1, 0, -1).
+- Cél: megtanulni a legnagyobb kumulatív jutalmat hozó akciósorozatot.
+
+🧠 Q-tábla frissítési képlete:
+Q[s,a] ← Q[s,a] + α * [r + γ * max Q[s',a'] - Q[s,a]]
+
+- s: jelenlegi állapot  
+- a: megtett akció  
+- r: kapott jutalom  
+- s': új állapot  
+- α (alpha): tanulási ráta (pl. 0.1)  
+- γ (gamma): diszkont faktor (pl. 0.9)
+
+⚙️ Alap metódusok:
+def act(self, state):
+    if random.random() < self.epsilon:
+        return random.choice(self.actions)
+    return np.argmax(self.Q[state])  # greedy akció
+
+def learn(self, state, action, reward, next_state):
+    old_value = self.Q[state][action]
+    future = max(self.Q[next_state])
+    self.Q[state][action] = old_value + self.alpha * (reward + self.gamma * future - old_value)
+
+🧱 Állapottér reprezentáció (pl. Pong):
+- Állapot: (labda_x, labda_y, sebesség_x, sebesség_y, ütő_x)
+- Kódolás: dictionary → ID (pl. state_to_id[state])
+- Q-tábla: Q[state_id][action]
+
+🏁 Terminális állapot:
+- Ha a labda leesik (veszítünk) vagy a játék véget ér.
+
+🔁 Példányosítás (epizód):
+for ep in range(n_episodes):
+    state = env.reset()
+    while not done:
+        action = agent.act(state)
+        new_state, reward, done = env.step(action)
+        agent.learn(state, action, reward, new_state)
+        state = new_state
+
+🎮 Példa akciók:
+actions = [0, 1, 2]  # LEFT, RIGHT, IDLE
+
+📦 Importok:
+import random
+import numpy as np
