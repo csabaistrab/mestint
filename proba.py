@@ -1,3 +1,7 @@
+from collections import namedtuple
+from collections import deque
+State = namedtuple("State", ["disk", "char"])
+que = deque([1,2,3,4])
 class Problem:
     """A formális problémát leíró absztrakt osztálya.
     Az __init__, goal_test és path_cost metódusok adott esetben felülírhatók.
@@ -153,8 +157,62 @@ class Cup3(Problem):
             m = min(two, 3-three)
             return (five, three+m, two-m)
 
-def main():
 
+class Hanoi(Problem):
+    def __init__(self, n):
+        # n darab korongunk van
+        self.size = n
+
+        # "1" * n : Kezdő állapot. Hány darab korng van az 1-es rúdon
+        # "3" * n : Cél állapot. Hány darab korong van a 2-es rúdon
+        super().__init__("1" * n, "3" * n)
+
+    def actions(self, state):
+        """Operátorok definiálása"""
+        acts = []
+
+        # Nézzük meg az egyes rúdak állapotát
+        f1 = state.find("1")
+        f2 = state.find("2")
+        f3 = state.find("3")
+
+        # Ha az 1. rúd nem üres és tartalma kisebb mint ami
+        # a 2. rúdon van vagy a 2. rúd üres akkor
+        # 1. rúdról átrakhatunk a második rúdra
+        if -1 < f1 and (f1 < f2 or f2 == -1):
+            acts.append(State(f1, "2"))
+
+        if -1 < f1 and (f1 < f3 or f3 == -1):
+            acts.append(State(f1, "3"))
+
+        if -1 < f2 and (f2 < f1 or f1 == -1):
+            acts.append(State(f2, "1"))
+
+        if -1 < f2 and (f2 < f3 or f3 == -1):
+            acts.append(State(f2, "3"))
+
+        if -1 < f3 and (f3 < f1 or f1 == -1):
+            acts.append(State(f3, "1"))
+
+        if -1 < f3 and (f3 < f2 or f2 == -1):
+            acts.append(State(f3, "2"))
+
+        return acts
+
+    def result(self, state, action):
+        """Operátorok hatásának definiálása"""
+
+        # diks = korong, char = rúd
+        disk, char = action
+
+        # Előtte és utánna lévő korongok helyeinek összefűzése
+        return state[0:disk] + char + state[disk + 1:]
+
+def main():
+    for i in range(2):
+        print(que.popleft())
+
+    print(que)
     return
 if __name__ == '__main__':
     main()
